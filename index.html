@@ -259,7 +259,7 @@ async function consultarReporte(){
 
   try{
     const response = await fetch(project.webhook, {
-      method: "GET"
+      method: "POST"
     });
 
     const contentType = response.headers.get("content-type") || "";
