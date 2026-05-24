@@ -22,7 +22,7 @@ body{
 }
 
 .page{
-  max-width:1100px;
+  max-width:1000px;
   margin:auto;
   padding:24px;
 }
@@ -77,6 +77,7 @@ select, input{
   border:1px solid #ccd;
   margin-top:6px;
   font-size:15px;
+  box-sizing:border-box;
 }
 
 button{
@@ -105,58 +106,20 @@ button:hover{
 
 .report{
   margin-top:18px;
-}
-
-.section{
+  white-space:pre-wrap;
   background:white;
-  margin-bottom:16px;
-  border-radius:18px;
-  overflow:hidden;
+  color:#111;
+  padding:18px;
+  border-radius:16px;
+  line-height:1.45;
+  font-family:Arial, sans-serif;
+  font-size:15px;
   border:1px solid #dde7ea;
 }
 
-.section-title{
-  background:var(--bitel-deep);
-  color:white;
-  padding:14px 18px;
-  font-weight:bold;
-  font-size:18px;
-}
-
-.section-body{
-  padding:16px 20px;
-}
-
-.item{
-  padding:10px 0;
-  border-bottom:1px solid #edf1f3;
-  line-height:1.45;
-}
-
-.item:last-child{
-  border-bottom:none;
-}
-
-.item b{
-  color:var(--bitel-teal);
-}
-
-.raw{
-  white-space:pre-wrap;
-  background:#101820;
-  color:#d1fae5;
-  padding:16px;
-  border-radius:16px;
-  overflow:auto;
-}
-
-.small{
-  font-size:13px;
-  color:#52616b;
-}
-
-.hidden{
-  display:none;
+.copy-btn{
+  margin-top:12px;
+  background:#003E4F;
 }
 </style>
 </head>
@@ -166,7 +129,7 @@ button:hover{
 
   <header class="hero">
     <h1>Reporter</h1>
-    <p>Panel de consulta visual para reportes desde Webhook / n8n</p>
+    <p>Consulta reportes desde n8n y muéstralos con formato listo para WhatsApp</p>
   </header>
 
   <section class="card">
@@ -188,23 +151,14 @@ button:hover{
   </section>
 
   <section class="card">
-    <h2>Resultado visual</h2>
-    <div id="report" class="report"></div>
-  </section>
-
-  <section class="card">
-    <h2>Respuesta original</h2>
-    <p class="small">Útil para verificar exactamente qué está devolviendo n8n.</p>
-    <pre id="raw" class="raw">Sin datos todavía.</pre>
+    <h2>Reporte</h2>
+    <div id="report" class="report">Sin datos todavía.</div>
+    <button class="copy-btn" onclick="copiarReporte()">Copiar para WhatsApp</button>
   </section>
 
 </div>
 
 <script>
-/* ==========================================================
-   EDITA AQUÍ TUS PROYECTOS Y WEBHOOKS
-========================================================== */
-
 const PROJECTS = [
   {
     name: "Packet Loss TRA",
@@ -220,15 +174,10 @@ const PROJECTS = [
   }
 ];
 
-/* ==========================================================
-   NO ES NECESARIO EDITAR DESDE AQUÍ
-========================================================== */
-
 const projectSelect = document.getElementById("projectSelect");
 const webhookUrl = document.getElementById("webhookUrl");
 const statusBox = document.getElementById("status");
 const reportBox = document.getElementById("report");
-const rawBox = document.getElementById("raw");
 
 function cargarProyectos(){
   projectSelect.innerHTML = "";
@@ -254,8 +203,7 @@ async function consultarReporte(){
   const project = PROJECTS[projectSelect.value];
 
   statusBox.textContent = "Consultando reporte...";
-  reportBox.innerHTML = "";
-  rawBox.textContent = "Consultando...";
+  reportBox.textContent = "Consultando...";
 
   try{
     const response = await fetch(project.webhook, {
@@ -263,107 +211,48 @@ async function consultarReporte(){
     });
 
     const contentType = response.headers.get("content-type") || "";
-
-    let data;
+    let mensaje = "";
 
     if(contentType.includes("application/json")){
-      data = await response.json();
-      rawBox.textContent = JSON.stringify(data, null, 2);
+      const data = await response.json();
 
-      const mensaje = data.mensaje || data.message || JSON.stringify(data, null, 2);
-      renderReporte(mensaje);
-    }
-    else{
-      const text = await response.text();
-      rawBox.textContent = text;
-      renderReporte(text);
+      if(Array.isArray(data)){
+        mensaje = data[0]?.mensaje || data[0]?.message || JSON.stringify(data, null, 2);
+      }else{
+        mensaje = data.mensaje || data.message || JSON.stringify(data, null, 2);
+      }
+
+    }else{
+      mensaje = await response.text();
     }
 
+    mensaje = String(mensaje)
+      .replaceAll("\\n", "\n")
+      .replaceAll("\\t", "\t");
+
+    reportBox.textContent = mensaje;
     statusBox.textContent = "Reporte recibido correctamente.";
-  }
-  catch(error){
+
+  }catch(error){
     statusBox.textContent = "Error al consultar el webhook.";
-    rawBox.textContent = error.message;
-    reportBox.innerHTML = `<div class="section"><div class="section-body">Error: ${escapeHtml(error.message)}</div></div>`;
+    reportBox.textContent = "Error: " + error.message;
   }
 }
 
-function renderReporte(texto){
-  if(!texto){
-    reportBox.innerHTML = "<p>No se recibió contenido.</p>";
+async function copiarReporte(){
+  const texto = reportBox.textContent;
+
+  if(!texto || texto === "Sin datos todavía."){
+    statusBox.textContent = "No hay reporte para copiar.";
     return;
   }
 
-  texto = texto.replaceAll("\\n", "\n");
-
-  const lines = texto.split("\n");
-  let html = "";
-  let currentBody = "";
-  let currentTitle = "";
-
-  function cerrarSeccion(){
-    if(currentTitle){
-      html += `
-        <div class="section">
-          <div class="section-title">${formatTitle(currentTitle)}</div>
-          <div class="section-body">${currentBody || "<p>Sin detalle.</p>"}</div>
-        </div>
-      `;
-    }
+  try{
+    await navigator.clipboard.writeText(texto);
+    statusBox.textContent = "Reporte copiado. Ya puedes pegarlo en WhatsApp.";
+  }catch(error){
+    statusBox.textContent = "No se pudo copiar automáticamente. Selecciona el texto manualmente.";
   }
-
-  for(const lineRaw of lines){
-    const line = lineRaw.trim();
-
-    if(!line) continue;
-
-    const isTitle = line.startsWith("*") && line.endsWith("*");
-
-    if(isTitle){
-      cerrarSeccion();
-      currentTitle = line;
-      currentBody = "";
-      continue;
-    }
-
-    if(line.startsWith("•")){
-      currentBody += `<div class="item">${formatBullet(line)}</div>`;
-    }
-    else{
-      currentBody += `<div class="item">${escapeHtml(line)}</div>`;
-    }
-  }
-
-  cerrarSeccion();
-
-  reportBox.innerHTML = html || `<pre class="raw">${escapeHtml(texto)}</pre>`;
-}
-
-function formatTitle(text){
-  return escapeHtml(text.replaceAll("*", ""));
-}
-
-function formatBullet(line){
-  line = line.replace(/^•\s*/, "");
-
-  const parts = line.split(":");
-
-  if(parts.length > 1){
-    const title = escapeHtml(parts.shift());
-    const detail = escapeHtml(parts.join(":").trim());
-    return `<b>• ${title}:</b> ${detail}`;
-  }
-
-  return "• " + escapeHtml(line);
-}
-
-function escapeHtml(text){
-  return String(text)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
 }
 
 cargarProyectos();
