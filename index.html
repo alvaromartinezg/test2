@@ -1,157 +1,373 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Transmission department tools</title>
+<meta charset="UTF-8">
+<title>Reporter</title>
 
-  <!-- Evitar cache -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
+<style>
+:root{
+  --bitel-yellow:#FFF200;
+  --bitel-cyan:#00B8EB;
+  --bitel-teal:#008D97;
+  --bitel-deep:#003E4F;
+  --ui-bg:#f5f8fa;
+  --text:#123;
+}
 
-  <!-- CSS externo -->
-  <link rel="stylesheet" href="css/styles.css" />
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:var(--bitel-deep);
+  color:var(--text);
+}
 
-  <!-- JS -->
-  <script src="js/main.js" defer></script>
+.page{
+  max-width:1100px;
+  margin:auto;
+  padding:24px;
+}
+
+.hero{
+  background:linear-gradient(135deg,var(--bitel-yellow),var(--bitel-cyan));
+  padding:24px;
+  border-radius:24px;
+  box-shadow:0 10px 25px #0005;
+}
+
+.hero h1{
+  margin:0;
+  color:var(--bitel-deep);
+  font-size:34px;
+}
+
+.hero p{
+  margin:8px 0 0;
+  font-weight:bold;
+}
+
+.card{
+  background:var(--ui-bg);
+  margin-top:20px;
+  padding:22px;
+  border-radius:22px;
+  box-shadow:0 10px 25px #0004;
+}
+
+.bar{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:end;
+}
+
+.field{
+  flex:1;
+  min-width:260px;
+}
+
+label{
+  font-weight:bold;
+  color:var(--bitel-deep);
+}
+
+select, input{
+  width:100%;
+  padding:13px;
+  border-radius:14px;
+  border:1px solid #ccd;
+  margin-top:6px;
+  font-size:15px;
+}
+
+button{
+  background:var(--bitel-teal);
+  color:white;
+  border:none;
+  padding:14px 22px;
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:bold;
+  font-size:15px;
+}
+
+button:hover{
+  background:#007783;
+}
+
+.status{
+  margin-top:14px;
+  padding:12px;
+  background:#e7f8fb;
+  border-left:6px solid var(--bitel-cyan);
+  border-radius:12px;
+  font-weight:bold;
+}
+
+.report{
+  margin-top:18px;
+}
+
+.section{
+  background:white;
+  margin-bottom:16px;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid #dde7ea;
+}
+
+.section-title{
+  background:var(--bitel-deep);
+  color:white;
+  padding:14px 18px;
+  font-weight:bold;
+  font-size:18px;
+}
+
+.section-body{
+  padding:16px 20px;
+}
+
+.item{
+  padding:10px 0;
+  border-bottom:1px solid #edf1f3;
+  line-height:1.45;
+}
+
+.item:last-child{
+  border-bottom:none;
+}
+
+.item b{
+  color:var(--bitel-teal);
+}
+
+.raw{
+  white-space:pre-wrap;
+  background:#101820;
+  color:#d1fae5;
+  padding:16px;
+  border-radius:16px;
+  overflow:auto;
+}
+
+.small{
+  font-size:13px;
+  color:#52616b;
+}
+
+.hidden{
+  display:none;
+}
+</style>
 </head>
+
 <body>
-  <!-- CABECERA -->
-<header class="header">
+<div class="page">
 
-  <!-- BLOQUE IZQUIERDO -->
-  <div class="header-left">
-    <img src="img/bitel_logo.png" alt="Bitel logo" />
+  <header class="hero">
+    <h1>Reporter</h1>
+    <p>Panel de consulta visual para reportes desde Webhook / n8n</p>
+  </header>
 
-    <div class="title-wrap">
-      <div class="title">Transmission department tools</div>
-      <div class="subtitle">Accesos rápidos y bases de datos</div>
+  <section class="card">
+    <div class="bar">
+      <div class="field">
+        <label>Seleccionar proyecto</label>
+        <select id="projectSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>Webhook seleccionado</label>
+        <input id="webhookUrl" readonly>
+      </div>
+
+      <button onclick="consultarReporte()">Consultar reporte</button>
     </div>
-  </div>
 
-  <!-- BOTÓN DERECHO -->
-  <a
-    href="http://38-250-161-19.nip.io"
-    class="btn header-btn"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    Task assignments
-  </a>
+    <div id="status" class="status">Selecciona un proyecto y presiona consultar.</div>
+  </section>
 
-</header>
+  <section class="card">
+    <h2>Resultado visual</h2>
+    <div id="report" class="report"></div>
+  </section>
 
+  <section class="card">
+    <h2>Respuesta original</h2>
+    <p class="small">Útil para verificar exactamente qué está devolviendo n8n.</p>
+    <pre id="raw" class="raw">Sin datos todavía.</pre>
+  </section>
 
-  <main class="container">
-    <!-- Herramientas -->
-    <section class="section">
-      <h2>TECHNICAL TOOLS</h2>
-      <div class="grid">
-        <a class="btn" href="https://alvaromartinezg.github.io/kmz_extractor/" target="_blank" rel="noopener noreferrer">
-          Extractor de coordenadas
-        </a>
-        <a class="btn" href="https://alvaromartinezg.github.io/Poles-extractor/" target="_blank" rel="noopener noreferrer">
-          Diseñador fibra MT
-        </a>
-        
-        <a class="btn"
-           href="data/Fiber_material_calculator.xlsm"
-           download="Fiber_material_calculator.xlsm">
-          Material calculator of optical fiber
-        </a>
+</div>
 
-        <a class="btn" href="https://alvaromartinezg.github.io/informativeletter/" target="_blank" rel="noopener noreferrer">
-          Segmento de red para cartas
-        </a>
+<script>
+/* ==========================================================
+   EDITA AQUÍ TUS PROYECTOS Y WEBHOOKS
+========================================================== */
 
-        <a class="btn" href="https://alvaromartinezg.github.io/microwavedesigner/" target="_blank" rel="noopener noreferrer">
-          Diseñador Microondas
-        </a>
+const PROJECTS = [
+  {
+    name: "Packet Loss TRA",
+    webhook: "https://TU-N8N.com/webhook/packet-loss-tra"
+  },
+  {
+    name: "MW Congestion",
+    webhook: "https://TU-N8N.com/webhook/mw-congestion"
+  },
+  {
+    name: "Vikunja Pendientes",
+    webhook: "https://TU-N8N.com/webhook/vikunja-pendientes"
+  }
+];
 
-        
-      </div>
-    </section>
-<section class="section">
-      <h2>OFFICE TOOL</h2>
-      <div class="grid">
-        <a class="btn" href="https://alvaromartinezg.github.io/sr_dashboard/" target="_blank" rel="noopener noreferrer">
-          SR report generator
-        </a>
-        <a class="btn" href="https://alvaromartinezg.github.io/extractor-validaciones/" target="_blank" rel="noopener noreferrer">
-          Mw validation extractor
-        </a>
-        
-      </div>
-    </section>
+/* ==========================================================
+   NO ES NECESARIO EDITAR DESDE AQUÍ
+========================================================== */
 
+const projectSelect = document.getElementById("projectSelect");
+const webhookUrl = document.getElementById("webhookUrl");
+const statusBox = document.getElementById("status");
+const reportBox = document.getElementById("report");
+const rawBox = document.getElementById("raw");
 
-    
-    <!-- Bases de datos -->
-    <section class="section">
-      <h2>BASES DE DATOS PRINCIPALES DEL DEPARTAMENTO</h2>
-      <div class="grid">
-        <a class="btn secondary" href="https://onedrive.live.com/edit?id=9124AA26C6227C9B!174794&resid=9124AA26C6227C9B!174794&authkey=!AG2p1OpDS6s1qL4&ithint=file,xlsx&e=0hDXlB&wdo=2&cid=9124aa26c6227c9b" target="_blank" rel="noopener noreferrer">
-          Metro MW Design
-        </a>
-        <a class="btn secondary" href="https://onedrive.live.com/:x:/g/personal/9124AA26C6227C9B/EZt8IsYmqiQggJHJqgIAAAABnyTXK1EV2z7LQTKyl3q1uQ?resid=9124AA26C6227C9B!174793" target="_blank" rel="noopener noreferrer">
-          Metro IP Plan
-        </a>
-        <a class="btn secondary" href="https://1drv.ms/x/c/9124aa26c6227c9b/Eavg6UfpxOFGg3aXAtha2EIBVU4vD34iDghumiXpY3UMBQ?e=LOQikd" target="_blank" rel="noopener noreferrer">
-          Customer MW Design
-        </a>
-        <a class="btn secondary" href="https://1drv.ms/x/c/9124aa26c6227c9b/EZt8IsYmqiQggJHYqgIAAAAB_a1TLSF2XURAChmtaB-RAg?e=fcNXbz" target="_blank" rel="noopener noreferrer">
-          Customer IP Plan
-        </a>
-      </div>
-    </section>
+function cargarProyectos(){
+  projectSelect.innerHTML = "";
 
-    <!-- Enlaces oficiales -->
-    <section class="section">
-      <h2>ENLACES OFICIALES BITEL</h2>
-      <div class="grid">
-        <div class="linkcard">
-          <span class="name">VOFFICE</span>
-          <a class="btn" href="http://voffice.viettel.vn/app-view/" target="_blank" rel="noopener noreferrer">Abrir</a>
+  PROJECTS.forEach((p, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = p.name;
+    projectSelect.appendChild(option);
+  });
+
+  actualizarWebhook();
+}
+
+function actualizarWebhook(){
+  const project = PROJECTS[projectSelect.value];
+  webhookUrl.value = project.webhook;
+}
+
+projectSelect.addEventListener("change", actualizarWebhook);
+
+async function consultarReporte(){
+  const project = PROJECTS[projectSelect.value];
+
+  statusBox.textContent = "Consultando reporte...";
+  reportBox.innerHTML = "";
+  rawBox.textContent = "Consultando...";
+
+  try{
+    const response = await fetch(project.webhook, {
+      method: "GET"
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+
+    let data;
+
+    if(contentType.includes("application/json")){
+      data = await response.json();
+      rawBox.textContent = JSON.stringify(data, null, 2);
+
+      const mensaje = data.mensaje || data.message || JSON.stringify(data, null, 2);
+      renderReporte(mensaje);
+    }
+    else{
+      const text = await response.text();
+      rawBox.textContent = text;
+      renderReporte(text);
+    }
+
+    statusBox.textContent = "Reporte recibido correctamente.";
+  }
+  catch(error){
+    statusBox.textContent = "Error al consultar el webhook.";
+    rawBox.textContent = error.message;
+    reportBox.innerHTML = `<div class="section"><div class="section-body">Error: ${escapeHtml(error.message)}</div></div>`;
+  }
+}
+
+function renderReporte(texto){
+  if(!texto){
+    reportBox.innerHTML = "<p>No se recibió contenido.</p>";
+    return;
+  }
+
+  texto = texto.replaceAll("\\n", "\n");
+
+  const lines = texto.split("\n");
+  let html = "";
+  let currentBody = "";
+  let currentTitle = "";
+
+  function cerrarSeccion(){
+    if(currentTitle){
+      html += `
+        <div class="section">
+          <div class="section-title">${formatTitle(currentTitle)}</div>
+          <div class="section-body">${currentBody || "<p>Sin detalle.</p>"}</div>
         </div>
-        <div class="linkcard">
-          <span class="name">WMS</span>
-          <a class="btn" href="https://10.255.58.201:8001/sso/login?appCode=PT08014_NC&service=http%3A%2F%2F10.121.6.132%3A8087%2FWMS" target="_blank" rel="noopener noreferrer">Abrir</a>
-        </div>
-        <div class="linkcard">
-          <span class="name">GNOC</span>
-          <a class="btn" href="https://10.255.58.201:9000/" target="_blank" rel="noopener noreferrer">Abrir</a>
-        </div>
-        <div class="linkcard">
-          <span class="name">IPMS</span>
-          <a class="btn" href="https://10.121.62.70" target="_blank" rel="noopener noreferrer">Abrir</a>
-        </div>
-        <div class="linkcard">
-          <span class="name">ASSET SYSTEM</span>
-          <a class="btn" href="http://10.121.6.132:8880/AMS/authenticateAction.do" target="_blank" rel="noopener noreferrer">Abrir</a>
-        </div>
-        <div class="linkcard">
-          <span class="name">U2000</span>
-          <a class="btn" href="https://10.121.42.67:31943/unisso/login.action" target="_blank" rel="noopener noreferrer">Abrir</a>
-        </div>
-      </div>
-    </section>
-    <div class="footer">© Transmission Department · Bitel</div>
-  </main>
+      `;
+    }
+  }
+
+  for(const lineRaw of lines){
+    const line = lineRaw.trim();
+
+    if(!line) continue;
+
+    const isTitle = line.startsWith("*") && line.endsWith("*");
+
+    if(isTitle){
+      cerrarSeccion();
+      currentTitle = line;
+      currentBody = "";
+      continue;
+    }
+
+    if(line.startsWith("•")){
+      currentBody += `<div class="item">${formatBullet(line)}</div>`;
+    }
+    else{
+      currentBody += `<div class="item">${escapeHtml(line)}</div>`;
+    }
+  }
+
+  cerrarSeccion();
+
+  reportBox.innerHTML = html || `<pre class="raw">${escapeHtml(texto)}</pre>`;
+}
+
+function formatTitle(text){
+  return escapeHtml(text.replaceAll("*", ""));
+}
+
+function formatBullet(line){
+  line = line.replace(/^•\s*/, "");
+
+  const parts = line.split(":");
+
+  if(parts.length > 1){
+    const title = escapeHtml(parts.shift());
+    const detail = escapeHtml(parts.join(":").trim());
+    return `<b>• ${title}:</b> ${detail}`;
+  }
+
+  return "• " + escapeHtml(line);
+}
+
+function escapeHtml(text){
+  return String(text)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+cargarProyectos();
+</script>
+
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
